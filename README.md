@@ -29,3 +29,22 @@ Taxis and bike taxis are included.
 
 **Caveat:** the old dashboard says it is discontinued after 15 Aug 2026. It still works,
 but expect it to stop one day.
+
+## Website and deployment
+
+The website (`app/`, entry point `index.py`) reads data from Supabase when
+`NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set, otherwise from
+the local `data/odometrics.db`. Local run: `python -m uvicorn index:app --port 8000`.
+
+**Vercel:** import this repo, keep the default build settings, and add the two
+environment variables above (mark the service-role key Sensitive). Vercel installs
+only `requirements.txt` (website). Pick the Mumbai (`bom1`) function region so the
+site sits next to the Supabase database. Turn on Deployment Protection until login exists.
+
+**Data flow:** the collector runs on an office PC (needs a browser; install
+`collector/requirements.txt`), then `pipeline/parse_raw.py` checks and loads,
+then `pipeline/push_supabase.py` updates Supabase. The website picks up new data
+within 10 minutes.
+
+**Supabase setup (once):** run the files in `supabase/` in order
+(`python pipeline/run_sql.py supabase/001_*.sql supabase/002_*.sql supabase/003_*.sql`).

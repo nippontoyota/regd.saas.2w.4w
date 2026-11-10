@@ -1,5 +1,5 @@
-playwright>=1.40.0
-pandas
-openpyxl
+# Website only (this is what Vercel installs).
+# The collector and pipeline need collector/requirements.txt as well.
 fastapi
+pandas
 uvicorn[standard]

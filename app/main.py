@@ -4,7 +4,6 @@ Run:  python -m uvicorn app.main:app --reload --port 8000
 Open: http://localhost:8000
 """
 import calendar
-import sqlite3
 import sys
 from datetime import date
 from pathlib import Path
@@ -17,29 +16,23 @@ from fastapi.staticfiles import StaticFiles
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_DIR / "pipeline"))
 from brands import BRAND_PROFILE, brand_for  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import datasource  # noqa: E402
 
-DB_PATH = PROJECT_DIR / "data" / "odometrics.db"
 FUEL_LABELS = {"PET": "Petrol", "DSL": "Diesel", "CNG": "CNG", "EV": "EV",
                "HYB": "Hybrid", "PHEV": "Plug-in hybrid", "OTH": "Other"}
 
 app = FastAPI(title="Odometrics")
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
-_cache = {}
-
 
 def data():
-    """Registrations with clean brand names, loaded once per database change."""
-    mtime = DB_PATH.stat().st_mtime
-    if _cache.get("mtime") != mtime:
-        with sqlite3.connect(DB_PATH) as db:
-            reg = pd.read_sql("select * from registrations", db)
-            rtos = pd.read_sql("select * from rtos", db)
-        reg["brand"] = reg["maker"].map(brand_for)
-        reg["period"] = reg["year"] * 100 + reg["month"]
-        _cache.update(mtime=mtime, reg=reg, rtos=dict(zip(rtos.rto_code, rtos.rto_name)),
-                      as_of=date.fromisoformat(reg["as_of"].max()))
-    return _cache
+    """Registrations with clean brand names (Supabase, or local SQLite)."""
+    return datasource.load(brand_for)
+
+
+def as_of_for(segment):
+    return date.fromisoformat(data()["as_of"][segment])
 
 
 def prev_period(p):
@@ -93,7 +86,7 @@ def meta(segment: str = "4W"):
     rtos = sorted(({"code": k, "name": c["rtos"].get(k, k), "volume": int(v)} for k, v in rto_vol.items()),
                   key=lambda r: int("".join(ch for ch in r["code"] if ch.isdigit()) or 0))
     periods = sorted(reg["period"].unique().tolist())
-    return {"as_of": c["as_of"].isoformat(), "brands": brands, "rtos": rtos,
+    return {"as_of": as_of_for(segment).isoformat(), "brands": brands, "rtos": rtos,
             "periods": [{"value": p, "label": label(p)} for p in periods],
             "fuels": [{"value": k, "label": v} for k, v in FUEL_LABELS.items()]}
 
@@ -131,7 +124,7 @@ def dashboard(segment: str, brand: str, competitors: str = "", rtos: str = "", f
     if d.empty:
         raise HTTPException(404, "No registrations for this selection")
     periods = sorted(d["period"].unique())
-    cur = period or periods[-1]
+    cur = int(period or periods[-1])
     prev = prev_period(cur)
     tracked = [brand] + comp
 
@@ -140,7 +133,7 @@ def dashboard(segment: str, brand: str, competitors: str = "", rtos: str = "", f
     ptotal, prev_s, _ = shares(prev_df, tracked)
 
     # Current month is partial: compare volumes on a projected full-month basis.
-    as_of = c["as_of"]
+    as_of = as_of_for(segment)
     is_partial = cur == as_of.year * 100 + as_of.month
     days_in = calendar.monthrange(cur // 100, cur % 100)[1]
     days_done = max(as_of.day - 1, 1) if is_partial else days_in
@@ -220,7 +213,7 @@ def rto_detail(segment: str, code: str, brand: str, fuel: str = "", period: int 
     d = filtered(segment, [code], fuels)
     if d.empty:
         raise HTTPException(404, "No registrations for this RTO")
-    cur = period or int(d["period"].max())
+    cur = int(period or d["period"].max())
     total, _, ranking = shares(d[d.period == cur], [])
     brands = [{"brand": b, "count": int(n), "share": round(n / total * 100, 1), "you": b == brand}
               for b, n in ranking.items()]
