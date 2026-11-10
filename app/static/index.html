@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Odometrics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="logo">Odo<span>metrics</span></div>
+  <div class="topbar-right">
+    <span id="asof" class="muted"></span>
+    <button id="edit-profile" class="ghost hidden">Edit setup</button>
+  </div>
+</header>
+
+<!-- Onboarding -->
+<main id="onboarding" class="wizard hidden">
+  <div class="steps" id="steps"></div>
+  <section class="card wizard-card">
+    <h1 id="w-title"></h1>
+    <p id="w-help" class="muted"></p>
+    <div id="w-body"></div>
+    <p id="w-error" class="error"></p>
+    <div class="wizard-nav">
+      <button id="w-back" class="ghost">Back</button>
+      <button id="w-next" class="primary">Next</button>
+    </div>
+  </section>
+</main>
+
+<!-- Dashboard -->
+<main id="dashboard" class="hidden">
+  <div class="dash-head">
+    <h1 id="d-title"></h1>
+    <div class="filters">
+      <select id="f-period" aria-label="Period"></select>
+      <select id="f-fuel" aria-label="Fuel"></select>
+    </div>
+  </div>
+  <p id="d-note" class="muted note"></p>
+
+  <section class="kpis">
+    <div class="kpi"><div class="kpi-label">Your registrations</div><div class="kpi-value" id="k-count"></div><div class="kpi-sub" id="k-count-sub"></div></div>
+    <div class="kpi"><div class="kpi-label">Market share</div><div class="kpi-value" id="k-share"></div><div class="kpi-sub" id="k-share-sub"></div></div>
+    <div class="kpi"><div class="kpi-label">Rank vs your competitors</div><div class="kpi-value" id="k-rank"></div><div class="kpi-sub" id="k-rank-sub"></div></div>
+    <div class="kpi"><div class="kpi-label">Market size</div><div class="kpi-value" id="k-market"></div><div class="kpi-sub" id="k-market-sub"></div></div>
+  </section>
+
+  <section class="grid2">
+    <div class="card"><h2>Market share trend</h2><div class="chart-box"><canvas id="c-trend"></canvas></div></div>
+    <div class="card"><h2 id="t-title">Competitors</h2>
+      <table class="tbl" id="t-comp"><thead><tr><th>Brand</th><th class="num">Regs</th><th class="num">Share</th><th class="num">Δ pts</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <div class="card"><h2>Your share by RTO</h2><p class="muted small">Tap an RTO for all brands there</p>
+      <div id="rto-bars"></div>
+    </div>
+    <div class="card"><h2>Fuel mix: you vs market</h2><div class="chart-box"><canvas id="c-fuel"></canvas></div></div>
+  </section>
+
+  <section class="card hidden" id="rto-detail">
+    <div class="dash-head"><h2 id="r-title"></h2><button class="ghost" id="r-close">Close</button></div>
+    <div class="grid2">
+      <table class="tbl" id="r-table"><thead><tr><th>Brand</th><th class="num">Regs</th><th class="num">Share</th></tr></thead><tbody></tbody></table>
+      <div class="chart-box"><canvas id="c-rto"></canvas></div>
+    </div>
+  </section>
+
+  <section class="card ai">
+    <h2>Ask about your market</h2>
+    <p class="muted">Coming next: ask questions like “Why did our share drop in KL17 this month?”</p>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
